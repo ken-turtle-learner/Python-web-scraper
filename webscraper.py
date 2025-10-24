@@ -1,3 +1,10 @@
+import logging
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -13,8 +20,9 @@ while(status_code != 404): # Loop until the site returns a 404 meaning we've rea
     status_code = page.status_code 
 
     if (status_code == 200): # 200 means a valid page was returned
-        soup = BeautifulSoup(page.content, 'html.parser')
+        soup = BeautifulSoup(page.content, 'lxml')
         articles = soup.find_all('article', class_='product_pod') 
+        logging.debug(f'Page number: {page_num}')
 
         for article in articles: 
             find_link = article.find('a')['href']
@@ -23,30 +31,29 @@ while(status_code != 404): # Loop until the site returns a 404 meaning we've rea
             if not(book_link in link_list): #Checks if  link is a duplicate
                 link_list.append(book_link)
 
-## Step 2: Go through each link in link_list
+logging.debug('link_list is completed')
+
+count = 1
+##Step 2: Go through each link in link_list
 for link in link_list:
     page = requests.get(link)
     status_code = page.status_code
-
     if (status_code == 200): # 200 means a valid page was returned
-        soup = BeautifulSoup(page.content, 'html.parser')
-        book_info = soup.find('div', class_='col-sm-6 product-main')
-
-        title = book_info.find('h1').text
+        soup = BeautifulSoup(page.content, 'lxml')
+        book_info = soup.find('article', class_='product_page')
+        title = book_info.h1.text
         price = book_info.find('p', class_='price_color').text.replace("£","")
-
-        # Parse table
+        
+        ## Parse table
         table = soup.find('table')
         row = table.find_all('tr')
 
         upc = row[0].find('td').text
-        print(upc)
-
         availability = row[5].find('td').text
-        print(availability)
-
-        print(f"title: {title}, UPC: {upc}")
+        
         book_data[upc] = {'Title' : title, 'Price' : price, 'Availability' : availability}
+    count += 1
+    logging.debug(f'book: {count}')
 
-
-print(book_data) 
+logging.debug(book_data)
+logging.debug('End	of	program')
