@@ -1,6 +1,5 @@
 import requests
 from bs4 import BeautifulSoup
-import pandas as pd
 
 page_num = 0
 status_code = 0
@@ -24,7 +23,6 @@ while(status_code != 404): # Loop until the site returns a 404 meaning we've rea
             if not(book_link in link_list): #Checks if  link is a duplicate
                 link_list.append(book_link)
 
-
 ## Step 2: Go through each link in link_list
 for link in link_list:
     page = requests.get(link)
@@ -32,6 +30,23 @@ for link in link_list:
 
     if (status_code == 200): # 200 means a valid page was returned
         soup = BeautifulSoup(page.content, 'html.parser')
-        book_info = soup.find('article', class_='product_page')
-        book_title = book_info.find('h1')
-        print (book_title.text)
+        book_info = soup.find('div', class_='col-sm-6 product-main')
+
+        title = book_info.find('h1').text
+        price = book_info.find('p', class_='price_color').text.replace("£","")
+
+        # Parse table
+        table = soup.find('table')
+        row = table.find_all('tr')
+
+        upc = row[0].find('td').text
+        print(upc)
+
+        availability = row[5].find('td').text
+        print(availability)
+
+        print(f"title: {title}, UPC: {upc}")
+        book_data[upc] = {'Title' : title, 'Price' : price, 'Availability' : availability}
+
+
+print(book_data) 
