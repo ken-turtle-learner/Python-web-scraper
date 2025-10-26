@@ -30,7 +30,7 @@ book_data = []
 count = 0
 
 # Step 1: Parse index pages and extract the links to the book pages and append to link_list
-while(page_num < 1): # Loop until the site returns a 404 meaning we've reached the last of the index pages
+while(status_code != 404): # Loop until the site returns a 404 meaning we've reached the last of the index pages
     page_num = page_num + 1
     index_url = (f'https://books.toscrape.com/catalogue/page-{page_num}.html')
     page = requests.get(index_url)
