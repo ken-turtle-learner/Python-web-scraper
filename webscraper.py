@@ -8,12 +8,29 @@ logging.basicConfig(
 import requests
 from bs4 import BeautifulSoup
 
+from dotenv import load_dotenv #import lib to read dotenv file with the supabase url and key
+load_dotenv()
+import os
+from supabase import create_client, Client  #Create client to connect with Supabase
+url: str = os.environ.get("SUPABASE_URL")
+key: str = os.environ.get("SUPABASE_KEY")
+supabase: Client = create_client(url, key)
+
+##get existing upc from supabase 
+existing_upc = set()
+get_upc = supabase.table("detailed_books").select("upc").execute()
+for upc in get_upc.data:
+    existing_upc.add(upc["upc"])
+
+##Setup variables
 page_num = 0
 status_code = 0
 link_list = []
-book_data = {}
+book_data = []
+count = 0
+
 # Step 1: Parse index pages and extract the links to the book pages and append to link_list
-while(status_code != 404): # Loop until the site returns a 404 meaning we've reached the last of the index pages
+while(page_num < 1): # Loop until the site returns a 404 meaning we've reached the last of the index pages
     page_num = page_num + 1
     index_url = (f'https://books.toscrape.com/catalogue/page-{page_num}.html')
     page = requests.get(index_url)
@@ -48,12 +65,20 @@ for link in link_list:
         table = soup.find('table')
         row = table.find_all('tr')
 
+        ##Parse upc and availability
         upc = row[0].find('td').text
         availability = row[5].find('td').text
         
-        book_data[upc] = {'Title' : title, 'Price' : price, 'Availability' : availability}
-    count += 1
-    logging.debug(f'book: {count}')
+        if not(book_link in existing_upc):
+            book_row = {'upc' : upc, 'title' : title, 'price' : price, 'availability' : availability}
+            book_data.append(book_row)
+            count += 1
+            logging.debug(f'book: {count}')
 
 logging.debug(book_data)
+
+##Send data to books database in Supabase
+response = supabase.table("detailed_books").insert(book_data).execute()
+print(response)
+
 logging.debug('End	of	program')
