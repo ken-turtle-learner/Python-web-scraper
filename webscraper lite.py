@@ -16,6 +16,12 @@ url: str = os.environ.get("SUPABASE_URL")
 key: str = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
 
+##get existing URLs from supabase 
+existing_urls = set()
+get_link = supabase.table("books").select("link").execute()
+for existing_link in get_link.data:
+    existing_urls.add(existing_link["link"])
+
 ##Setup variables
 page_num = 0
 status_code = 0
@@ -46,11 +52,13 @@ while(status_code != 404): # Loop until the site returns a 404 meaning we've rea
             price = book_price.find('p', class_='price_color').text.replace("£","")
             availability = book_price.find('p', class_='instock availability').get_text(strip=True)
             
-            ##Add Book info to book_data dictionary
-            book_row = {'title' : title, 'price' : price, 'rating': rating, 'availability' : availability, 'link' : book_link}
-            book_data.append(book_row)
-            count += 1
-            logging.debug(f'Book: {count}')
+            ##Check for duplicate
+            if not(book_link in existing_urls):
+                ##Add Book info to book_data dictionary
+                book_row = {'title' : title, 'price' : price, 'rating': rating, 'availability' : availability, 'link' : book_link}
+                book_data.append(book_row)
+                count += 1
+                logging.debug(f'Book: {count}')
 
 logging.debug(book_data)
 logging.debug(f'Total books: {count}')
