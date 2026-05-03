@@ -97,7 +97,7 @@ For `webscraper lite.py`, create a `books` table with columns:
 python webscraper.py
 # or
 python "webscraper lite.py"
-
+```
 ## Planned Improvements
 
 - [ ] Add `try/except` blocks around HTTP requests and Supabase inserts
